@@ -16,13 +16,19 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - name: Publish
-        run: dotnet publish src/RiftSentry/RiftSentry.csproj -c Release -r win-x64 --self-contained true -o ./publish -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+      - name: Publish self-contained
+        run: dotnet publish src/RiftSentry/RiftSentry.csproj -c Release -r win-x64 --self-contained true -o ./publish-sc -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:InvariantGlobalization=true -p:DebugType=none
+      - name: Publish framework-dependent
+        run: dotnet publish src/RiftSentry/RiftSentry.csproj -c Release -r win-x64 --self-contained false -o ./publish-fdd -p:DebugType=none
       - name: Zip
         shell: pwsh
-        run: Compress-Archive -Path ./publish/* -DestinationPath RiftSentry-win-x64.zip
+        run: |
+          Compress-Archive -Path ./publish-sc/* -DestinationPath RiftSentry-win-x64-self-contained.zip
+          Compress-Archive -Path ./publish-fdd/* -DestinationPath RiftSentry-win-x64-framework-dependent.zip
       - uses: softprops/action-gh-release@v2
         with:
-          files: RiftSentry-win-x64.zip
+          files: |
+            RiftSentry-win-x64-self-contained.zip
+            RiftSentry-win-x64-framework-dependent.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
