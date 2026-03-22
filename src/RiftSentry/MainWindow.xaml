@@ -11,7 +11,7 @@
         Topmost="True"
         ResizeMode="NoResize"
         SizeToContent="WidthAndHeight"
-        ShowInTaskbar="True">
+        ShowInTaskbar="False">
     <Border x:Name="RootBorder"
             Padding="6"
             CornerRadius="6"
@@ -23,8 +23,7 @@
                     Background="Transparent"
                     Cursor="SizeAll"
                     MouseLeftButtonDown="DragHandle_MouseLeftButtonDown"/>
-            <ItemsControl ItemsSource="{Binding Enemies}"
-                          Visibility="{Binding IsInGame, Converter={StaticResource BoolToVis}}">
+            <ItemsControl ItemsSource="{Binding Enemies}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Border Margin="0,0,0,4"

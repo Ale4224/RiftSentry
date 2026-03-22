@@ -45,6 +45,9 @@ public sealed class LiveClientService : IDisposable
         using var doc = await JsonDocument.ParseAsync(stream, default, cancellationToken).ConfigureAwait(false);
         var root = doc.RootElement;
 
+        if (!root.TryGetProperty("gameData", out _))
+            return new GameSnapshot { InGame = false };
+
         if (!root.TryGetProperty("allPlayers", out var allPlayers) || allPlayers.ValueKind != JsonValueKind.Array)
             return new GameSnapshot { InGame = false };
 
@@ -95,6 +98,9 @@ public sealed class LiveClientService : IDisposable
                 HasCosmicInsightFromApi = hasCosmicFromApi
             });
         }
+
+        if (enemies.Count == 0)
+            return new GameSnapshot { InGame = false };
 
         return new GameSnapshot { InGame = true, Enemies = enemies };
     }
