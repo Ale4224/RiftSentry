@@ -135,6 +135,20 @@ public sealed class DataDragonService
         var normalizedDisplay = displayName.Trim();
         var normalizedKey = dataKey.Trim();
 
+        if (LooksLikeHexflash(normalizedDisplay, normalizedKey))
+        {
+            if (!_byKey.TryGetValue("SummonerFlash", out var flash))
+                return null;
+
+            return new SummonerSpellDefinition
+            {
+                Key = normalizedKey.Length > 0 ? normalizedKey : flash.Key,
+                Name = normalizedDisplay.Length > 0 ? normalizedDisplay : "Hexflash",
+                BaseCooldownSeconds = flash.BaseCooldownSeconds,
+                ImageFileName = flash.ImageFileName
+            };
+        }
+
         if (LooksLikeTeleport(normalizedDisplay, normalizedKey))
         {
             if (!_byKey.TryGetValue("SummonerTeleport", out var teleport))
@@ -165,6 +179,15 @@ public sealed class DataDragonService
     {
         return displayName.Contains("Teleport", StringComparison.OrdinalIgnoreCase)
             || dataKey.Contains("Teleport", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool LooksLikeHexflash(string displayName, string dataKey)
+    {
+        return displayName.Contains("Hexflash", StringComparison.OrdinalIgnoreCase)
+            || displayName.Contains("Flashtraption", StringComparison.OrdinalIgnoreCase)
+            || dataKey.Contains("Hexflash", StringComparison.OrdinalIgnoreCase)
+            || dataKey.Contains("Flashtraption", StringComparison.OrdinalIgnoreCase)
+            || dataKey.Contains("HextechFlash", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool LooksLikeSmite(string displayName, string dataKey)
