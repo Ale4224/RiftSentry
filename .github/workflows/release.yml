@@ -1,0 +1,28 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Publish
+        run: dotnet publish src/RiftSentry/RiftSentry.csproj -c Release -r win-x64 --self-contained true -o ./publish -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+      - name: Zip
+        shell: pwsh
+        run: Compress-Archive -Path ./publish/* -DestinationPath RiftSentry-win-x64.zip
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: RiftSentry-win-x64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

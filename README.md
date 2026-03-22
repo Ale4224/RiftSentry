@@ -22,6 +22,10 @@ dotnet run --project src/RiftSentry/RiftSentry.csproj
 
 Or run `RiftSentry.exe` from `src/RiftSentry/bin/Release/net8.0-windows/` after a Release build.
 
+## GitHub release
+
+Push a version tag (for example `v1.0.0`). The [Release](.github/workflows/release.yml) workflow builds a self-contained `win-x64` app, zips it, and attaches `RiftSentry-win-x64.zip` to the GitHub Release for that tag.
+
 ## How it works
 
 - **Live Client** (`/liveclientdata/allgamedata`, polled every 2 seconds): detects your team, lists enemy champions, items (Ionian Boots), and summoner spell slots.
