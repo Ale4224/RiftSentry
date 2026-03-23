@@ -10,6 +10,7 @@ namespace RiftSentry.ViewModels;
 
 public sealed class MainViewModel : ViewModelBase, IDisposable
 {
+    private const string StaticSyncFingerprint = "RIFTSENTRY_STATIC_FINGERPRINT";
     private readonly DataDragonService _ddragon;
     private readonly AssetCacheService _assets;
     private readonly LiveClientService _liveClient;
@@ -340,9 +341,7 @@ public sealed class MainViewModel : ViewModelBase, IDisposable
             return;
 
         _lastHeartbeatUtc = DateTime.UtcNow;
-        var inGame = _currentSnapshot?.InGame == true;
-        var matchFingerprint = inGame ? _currentSnapshot!.MatchFingerprint : "";
-        _ = _syncClient.SendHeartbeatAsync(matchFingerprint, inGame, _cts.Token);
+        _ = _syncClient.SendHeartbeatAsync(StaticSyncFingerprint, true, _cts.Token);
     }
 
     public void Dispose()
@@ -595,22 +594,22 @@ public sealed class MainViewModel : ViewModelBase, IDisposable
 
     private void OnEnemySpellCooldownChanged(EnemyChampionViewModel vm, SpellSlotNumber slot, DateTime? startedAtUtc, DateTime? endsAtUtc)
     {
-        if (!IsLobbyConnected || _currentSnapshot?.InGame != true || string.IsNullOrWhiteSpace(_currentSnapshot.MatchFingerprint))
+        if (!IsLobbyConnected)
             return;
 
         var state = new SpellStateDto(vm.RosterKey, slot, startedAtUtc, endsAtUtc);
         StoreSpellState(state);
-        _ = _syncClient.SendSpellCooldownAsync(_currentSnapshot.MatchFingerprint, vm.RosterKey, slot, startedAtUtc, endsAtUtc, _cts.Token);
+        _ = _syncClient.SendSpellCooldownAsync(StaticSyncFingerprint, vm.RosterKey, slot, startedAtUtc, endsAtUtc, _cts.Token);
     }
 
     private void OnEnemyCosmicStateChanged(EnemyChampionViewModel vm, bool enabled)
     {
-        if (!IsLobbyConnected || _currentSnapshot?.InGame != true || string.IsNullOrWhiteSpace(_currentSnapshot.MatchFingerprint))
+        if (!IsLobbyConnected)
             return;
 
         var state = new CosmicStateDto(vm.RosterKey, enabled);
         StoreCosmicState(state);
-        _ = _syncClient.SendCosmicStateAsync(_currentSnapshot.MatchFingerprint, vm.RosterKey, enabled, _cts.Token);
+        _ = _syncClient.SendCosmicStateAsync(StaticSyncFingerprint, vm.RosterKey, enabled, _cts.Token);
     }
 
     private List<SpellStateDto> BuildSpellStates()
@@ -656,7 +655,7 @@ public sealed class MainViewModel : ViewModelBase, IDisposable
 
         if (_currentSnapshot?.InGame != true)
         {
-            matchFingerprint = "";
+            matchFingerprint = StaticSyncFingerprint;
             playerName = Environment.UserName;
             error = "";
             return true;
@@ -665,7 +664,7 @@ public sealed class MainViewModel : ViewModelBase, IDisposable
         playerName = string.IsNullOrWhiteSpace(_currentSnapshot.LocalSummonerName)
             ? Environment.UserName
             : _currentSnapshot.LocalSummonerName;
-        matchFingerprint = _currentSnapshot.MatchFingerprint;
+        matchFingerprint = StaticSyncFingerprint;
         error = "";
         return true;
     }

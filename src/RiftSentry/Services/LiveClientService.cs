@@ -109,7 +109,7 @@ public sealed class LiveClientService : IDisposable
             InGame = true,
             LocalSummonerName = mySummonerName,
             MyTeam = myTeam,
-            MatchFingerprint = BuildMatchFingerprint(gameData, allPlayers, myTeam),
+            MatchFingerprint = BuildMatchFingerprint(gameData, allPlayers),
             Enemies = enemies
         };
     }
@@ -244,25 +244,27 @@ public sealed class LiveClientService : IDisposable
         };
     }
 
-    private static string BuildMatchFingerprint(JsonElement gameData, JsonElement allPlayers, string myTeam)
+    private static string BuildMatchFingerprint(JsonElement gameData, JsonElement allPlayers)
     {
         var entries = new List<string>();
         foreach (var player in allPlayers.EnumerateArray())
         {
             var summonerName = GetString(player, "summonerName").Trim();
-            var team = GetString(player, "team").Trim();
-            var championName = NormalizeChampionName(GetString(player, "championName")).Trim();
-            entries.Add($"{team.ToUpperInvariant()}|{summonerName.ToUpperInvariant()}|{championName.ToUpperInvariant()}");
+            if (!string.IsNullOrWhiteSpace(summonerName))
+                entries.Add(summonerName.ToUpperInvariant());
         }
 
         entries.Sort(StringComparer.Ordinal);
 
+        var gameId = GetFirstString(gameData, "gameId", "gameID", "gameUniqueId").Trim();
+        var gameStartTime = GetFirstString(gameData, "gameStartTime", "gameStartTimestamp").Trim();
         var queueId = GetString(gameData, "gameQueueConfigId").Trim();
         var mapId = GetString(gameData, "mapNumber").Trim();
         var mode = GetString(gameData, "gameMode").Trim().ToUpperInvariant();
         var raw = string.Join("\n", new[]
         {
-            myTeam.ToUpperInvariant(),
+            gameId,
+            gameStartTime,
             queueId,
             mapId,
             mode,
@@ -271,6 +273,18 @@ public sealed class LiveClientService : IDisposable
 
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(raw));
         return Convert.ToHexString(bytes);
+    }
+
+    private static string GetFirstString(JsonElement el, params string[] names)
+    {
+        foreach (var name in names)
+        {
+            var value = GetString(el, name);
+            if (!string.IsNullOrWhiteSpace(value))
+                return value;
+        }
+
+        return "";
     }
 
     public void Dispose() => _http.Dispose();
