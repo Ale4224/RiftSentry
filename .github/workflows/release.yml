@@ -17,7 +17,7 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - name: Publish self-contained
-        run: dotnet publish src/RiftSentry/RiftSentry.csproj -c Release -r win-x64 --self-contained true -o ./publish-sc -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:InvariantGlobalization=true -p:DebugType=none
+        run: dotnet publish src/RiftSentry/RiftSentry.csproj -c Release -r win-x64 --self-contained true -o ./publish-sc -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none
       - name: Publish framework-dependent
         run: dotnet publish src/RiftSentry/RiftSentry.csproj -c Release -r win-x64 --self-contained false -o ./publish-fdd -p:DebugType=none
       - name: Zip

@@ -56,7 +56,7 @@ This starts the self-hosted sync server on port `8080`.
 
 Push a version tag (for example `v1.0.0`). The [Release](.github/workflows/release.yml) workflow attaches two zips:
 
-- **`RiftSentry-win-x64-self-contained.zip`** — single `.exe`, no .NET install. Smaller than an uncompressed self-contained build thanks to **compressed single-file** and **invariant globalization** (no bundled ICU data). If you need full culture-specific formatting for every locale, build locally without `-p:InvariantGlobalization=true`.
+- **`RiftSentry-win-x64-self-contained.zip`** — single `.exe`, no .NET install. Built as a compressed single-file app with full globalization support so the WPF settings UI works correctly on packaged builds.
 - **`RiftSentry-win-x64-framework-dependent.zip`** — tiny footprint; requires the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) (`Windows x64` under **Run desktop apps**).
 
 The large size you see on a plain self-contained publish is mostly the **.NET runtime** embedded in the app. **Publish trimming** is not a good fit for WPF in most cases.
