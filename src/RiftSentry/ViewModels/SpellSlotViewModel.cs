@@ -8,6 +8,7 @@ public sealed class SpellSlotViewModel : ViewModelBase
 {
     private readonly Func<int> _getTotalHaste;
     private SummonerSpellDefinition? _definition;
+    private DateTime? _cooldownStartUtc;
     private DateTime? _cooldownEndUtc;
     private double _totalDurationSeconds;
     private string _iconPath = "";
@@ -20,6 +21,8 @@ public sealed class SpellSlotViewModel : ViewModelBase
     }
 
     public ICommand ToggleCommand { get; }
+
+    public event Action<DateTime?, DateTime?>? CooldownChanged;
 
     public string IconPath
     {
@@ -55,6 +58,10 @@ public sealed class SpellSlotViewModel : ViewModelBase
 
     public string RemainingText => IsOnCooldown ? $"{Math.Ceiling(RemainingSeconds):0}" : "";
 
+    public DateTime? CooldownStartUtc => _cooldownStartUtc;
+
+    public DateTime? CooldownEndUtc => _cooldownEndUtc;
+
     public void ApplyDefinition(SummonerSpellDefinition? def, string iconPath, string displayLabel)
     {
         _definition = def;
@@ -71,14 +78,30 @@ public sealed class SpellSlotViewModel : ViewModelBase
         if (!_cooldownEndUtc.HasValue) return;
         if (DateTime.UtcNow >= _cooldownEndUtc.Value)
         {
+            _cooldownStartUtc = null;
             _cooldownEndUtc = null;
             _totalDurationSeconds = 0;
         }
 
-        OnPropertyChanged(nameof(IsOnCooldown));
-        OnPropertyChanged(nameof(RemainingSeconds));
-        OnPropertyChanged(nameof(ProgressFraction));
-        OnPropertyChanged(nameof(RemainingText));
+        RefreshCooldownProperties();
+    }
+
+    public void ApplyCooldownState(DateTime? startedAtUtc, DateTime? endsAtUtc)
+    {
+        if (startedAtUtc.HasValue && endsAtUtc.HasValue && endsAtUtc.Value > startedAtUtc.Value)
+        {
+            _cooldownStartUtc = startedAtUtc;
+            _cooldownEndUtc = endsAtUtc;
+            _totalDurationSeconds = (endsAtUtc.Value - startedAtUtc.Value).TotalSeconds;
+        }
+        else
+        {
+            _cooldownStartUtc = null;
+            _cooldownEndUtc = null;
+            _totalDurationSeconds = 0;
+        }
+
+        RefreshCooldownProperties();
     }
 
     private void Toggle()
@@ -86,20 +109,22 @@ public sealed class SpellSlotViewModel : ViewModelBase
         if (_definition == null) return;
         if (IsOnCooldown)
         {
-            _cooldownEndUtc = null;
-            _totalDurationSeconds = 0;
-            OnPropertyChanged(nameof(IsOnCooldown));
-            OnPropertyChanged(nameof(RemainingSeconds));
-            OnPropertyChanged(nameof(ProgressFraction));
-            OnPropertyChanged(nameof(RemainingText));
+            ApplyCooldownState(null, null);
+            CooldownChanged?.Invoke(null, null);
             return;
         }
 
         var h = _getTotalHaste();
         var baseCd = _definition.BaseCooldownSeconds;
         var final = baseCd * (100.0 / (100.0 + h));
-        _totalDurationSeconds = final;
-        _cooldownEndUtc = DateTime.UtcNow.AddSeconds(final);
+        var startedAtUtc = DateTime.UtcNow;
+        var endsAtUtc = startedAtUtc.AddSeconds(final);
+        ApplyCooldownState(startedAtUtc, endsAtUtc);
+        CooldownChanged?.Invoke(startedAtUtc, endsAtUtc);
+    }
+
+    private void RefreshCooldownProperties()
+    {
         OnPropertyChanged(nameof(IsOnCooldown));
         OnPropertyChanged(nameof(RemainingSeconds));
         OnPropertyChanged(nameof(ProgressFraction));

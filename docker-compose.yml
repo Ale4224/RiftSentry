@@ -1,0 +1,8 @@
+services:
+  riftsentry-sync:
+    build:
+      context: .
+      dockerfile: src/RiftSentry.SyncServer/Dockerfile
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

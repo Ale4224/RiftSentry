@@ -1,6 +1,8 @@
 using System.Net.Http;
 using System.Net.Security;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Text.Json;
 using RiftSentry.Models;
 
@@ -45,7 +47,7 @@ public sealed class LiveClientService : IDisposable
         using var doc = await JsonDocument.ParseAsync(stream, default, cancellationToken).ConfigureAwait(false);
         var root = doc.RootElement;
 
-        if (!root.TryGetProperty("gameData", out _))
+        if (!root.TryGetProperty("gameData", out var gameData))
             return new GameSnapshot { InGame = false };
 
         if (!root.TryGetProperty("allPlayers", out var allPlayers) || allPlayers.ValueKind != JsonValueKind.Array)
@@ -102,7 +104,14 @@ public sealed class LiveClientService : IDisposable
         if (enemies.Count == 0)
             return new GameSnapshot { InGame = false };
 
-        return new GameSnapshot { InGame = true, Enemies = enemies };
+        return new GameSnapshot
+        {
+            InGame = true,
+            LocalSummonerName = mySummonerName,
+            MyTeam = myTeam,
+            MatchFingerprint = BuildMatchFingerprint(gameData, allPlayers, myTeam),
+            Enemies = enemies
+        };
     }
 
     private static string NormalizeChampionName(string championName)
@@ -233,6 +242,35 @@ public sealed class LiveClientService : IDisposable
             JsonValueKind.Number => p.GetRawText(),
             _ => ""
         };
+    }
+
+    private static string BuildMatchFingerprint(JsonElement gameData, JsonElement allPlayers, string myTeam)
+    {
+        var entries = new List<string>();
+        foreach (var player in allPlayers.EnumerateArray())
+        {
+            var summonerName = GetString(player, "summonerName").Trim();
+            var team = GetString(player, "team").Trim();
+            var championName = NormalizeChampionName(GetString(player, "championName")).Trim();
+            entries.Add($"{team.ToUpperInvariant()}|{summonerName.ToUpperInvariant()}|{championName.ToUpperInvariant()}");
+        }
+
+        entries.Sort(StringComparer.Ordinal);
+
+        var queueId = GetString(gameData, "gameQueueConfigId").Trim();
+        var mapId = GetString(gameData, "mapNumber").Trim();
+        var mode = GetString(gameData, "gameMode").Trim().ToUpperInvariant();
+        var raw = string.Join("\n", new[]
+        {
+            myTeam.ToUpperInvariant(),
+            queueId,
+            mapId,
+            mode,
+            string.Join("\n", entries)
+        });
+
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(raw));
+        return Convert.ToHexString(bytes);
     }
 
     public void Dispose() => _http.Dispose();

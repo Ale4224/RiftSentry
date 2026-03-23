@@ -1,0 +1,90 @@
+<Window x:Class="RiftSentry.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="RiftSentry Sync"
+        Width="420"
+        Height="380"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock FontSize="18"
+                   FontWeight="SemiBold"
+                   Text="Sync Settings"/>
+
+        <TextBlock Grid.Row="1"
+                   Margin="0,16,0,4"
+                   Text="Server URL"/>
+        <DockPanel Grid.Row="2">
+            <TextBox Width="300"
+                     VerticalAlignment="Center"
+                     Text="{Binding ServerUrl, UpdateSourceTrigger=PropertyChanged}"/>
+            <Button Width="72"
+                    Margin="8,0,0,0"
+                    Command="{Binding SaveServerUrlCommand}"
+                    Content="Save"/>
+        </DockPanel>
+
+        <GroupBox Grid.Row="3"
+                  Margin="0,16,0,0"
+                  Header="Lobby">
+            <StackPanel Margin="8">
+                <Button Height="28"
+                        Command="{Binding CreateLobbyCommand}"
+                        Content="Create Lobby"
+                        IsEnabled="{Binding CanCreateLobby}"/>
+                <TextBlock Margin="0,12,0,4"
+                           Text="Join with 6-digit code"/>
+                <DockPanel>
+                    <TextBox Width="120"
+                             VerticalAlignment="Center"
+                             MaxLength="6"
+                             IsEnabled="{Binding CanJoinLobby}"
+                             Text="{Binding JoinLobbyCodeInput, UpdateSourceTrigger=PropertyChanged}"/>
+                    <Button Width="72"
+                            Margin="8,0,0,0"
+                            Command="{Binding JoinLobbyCommand}"
+                            Content="Join"
+                            IsEnabled="{Binding CanJoinLobby}"/>
+                </DockPanel>
+                <Button Height="28"
+                        Margin="0,12,0,0"
+                        Command="{Binding LeaveLobbyCommand}"
+                        Content="Leave Lobby"
+                        IsEnabled="{Binding CanLeaveLobby}"/>
+                <ProgressBar Height="4"
+                             Margin="0,10,0,0"
+                             IsIndeterminate="True"
+                             Visibility="{Binding IsLobbyBusy, Converter={StaticResource BoolToVis}}"/>
+            </StackPanel>
+        </GroupBox>
+
+        <StackPanel Grid.Row="4"
+                    Margin="0,16,0,0">
+            <TextBlock FontWeight="SemiBold"
+                       Text="{Binding SyncConnectionText}"/>
+            <TextBlock Margin="0,4,0,0"
+                       Text="{Binding CurrentLobbyCodeText}"/>
+        </StackPanel>
+
+        <Border Grid.Row="6"
+                Margin="0,16,0,0"
+                Padding="10"
+                Background="#FFF3F4F6"
+                BorderBrush="#FFD1D5DB"
+                BorderThickness="1"
+                CornerRadius="6">
+            <TextBlock TextWrapping="Wrap"
+                       Text="{Binding SyncStatusMessage}"/>
+        </Border>
+    </Grid>
+</Window>

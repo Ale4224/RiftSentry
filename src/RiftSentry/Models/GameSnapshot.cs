@@ -3,6 +3,9 @@ namespace RiftSentry.Models;
 public sealed class GameSnapshot
 {
     public bool InGame { get; init; }
+    public string LocalSummonerName { get; init; } = "";
+    public string MyTeam { get; init; } = "";
+    public string MatchFingerprint { get; init; } = "";
     public IReadOnlyList<EnemyPlayerSnapshot> Enemies { get; init; } = Array.Empty<EnemyPlayerSnapshot>();
 }
 

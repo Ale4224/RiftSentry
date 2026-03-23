@@ -1,6 +1,7 @@
 using System.Windows.Input;
 using RiftSentry.Commands;
 using RiftSentry.Models;
+using RiftSentry.SyncContracts;
 
 namespace RiftSentry.ViewModels;
 
@@ -20,12 +21,18 @@ public sealed class EnemyChampionViewModel : ViewModelBase
     {
         SpellOne = new SpellSlotViewModel(() => TotalSummonerSpellHaste);
         SpellTwo = new SpellSlotViewModel(() => TotalSummonerSpellHaste);
-        ToggleCosmicCommand = new RelayCommand(_ => ManualCosmicInsightOverride = !ManualCosmicInsightOverride);
+        SpellOne.CooldownChanged += (startedAtUtc, endsAtUtc) => SpellCooldownChanged?.Invoke(SpellSlotNumber.One, startedAtUtc, endsAtUtc);
+        SpellTwo.CooldownChanged += (startedAtUtc, endsAtUtc) => SpellCooldownChanged?.Invoke(SpellSlotNumber.Two, startedAtUtc, endsAtUtc);
+        ToggleCosmicCommand = new RelayCommand(_ => ToggleCosmic());
     }
 
     public SpellSlotViewModel SpellOne { get; }
     public SpellSlotViewModel SpellTwo { get; }
     public ICommand ToggleCosmicCommand { get; }
+
+    public event Action<SpellSlotNumber, DateTime?, DateTime?>? SpellCooldownChanged;
+
+    public event Action<bool>? CosmicStateChanged;
 
     public string RosterKey
     {
@@ -139,5 +146,32 @@ public sealed class EnemyChampionViewModel : ViewModelBase
     {
         SpellOne.Tick();
         SpellTwo.Tick();
+    }
+
+    public void ApplyCosmicState(bool enabled)
+    {
+        ManualCosmicInsightOverride = enabled;
+    }
+
+    public void ApplySpellCooldown(SpellSlotNumber slot, DateTime? startedAtUtc, DateTime? endsAtUtc)
+    {
+        GetSpellSlot(slot).ApplyCooldownState(startedAtUtc, endsAtUtc);
+    }
+
+    public SpellStateDto GetSpellState(SpellSlotNumber slot)
+    {
+        var spell = GetSpellSlot(slot);
+        return new SpellStateDto(RosterKey, slot, spell.CooldownStartUtc, spell.CooldownEndUtc);
+    }
+
+    public CosmicStateDto GetCosmicState() => new(RosterKey, ManualCosmicInsightOverride);
+
+    private SpellSlotViewModel GetSpellSlot(SpellSlotNumber slot) =>
+        slot == SpellSlotNumber.One ? SpellOne : SpellTwo;
+
+    private void ToggleCosmic()
+    {
+        ManualCosmicInsightOverride = !ManualCosmicInsightOverride;
+        CosmicStateChanged?.Invoke(ManualCosmicInsightOverride);
     }
 }
